@@ -244,8 +244,8 @@ void Matrix_GFX::drawCircle(int8_t x0, int8_t y0, int8_t r, uint8_t color)
 /**************************************************************************/
 void Matrix_GFX::fillCircle(int8_t x0, int8_t y0, int8_t r, uint8_t color)
 {
-    drawLine(x0, y0 - r, x0, 2 * r + 1, color);
-    fillCircleHelper(x0, y0, r, 3, 0, color);
+    drawLine(x0, y0 - r, x0, y0 + r, color);
+    fillCircleHelper(x0, y0, r, 0xFF, 0, color);
 }
 
 /**************************************************************************/
@@ -259,7 +259,7 @@ void Matrix_GFX::fillCircle(int8_t x0, int8_t y0, int8_t r, uint8_t color)
     @param    color 16-bit 5-6-5 Color to draw with
 */
 /**************************************************************************/
-void Matrix_GFX::drawCircleHelper(int8_t x0, int8_t y0, uint8_t r,
+void Matrix_GFX::drawCircleHelper(int8_t x0, int8_t y0, int8_t r,
                                   uint8_t cornername, uint8_t color)
 {
     int8_t f = 1 - r;
@@ -344,16 +344,16 @@ void Matrix_GFX::fillCircleHelper(int8_t x0, int8_t y0, int8_t r,
         if (x < (y + 1))
         {
             if (corners & 1)
-                drawLine(x0 + x, y0 - y, x0 + x, y0 + y + delta, color);
+                drawLine(x0 + x, y0 - y, x0 + x, y0 + y + delta-1, color);
             if (corners & 2)
-                drawLine(x0 - x, y0 - y, x0 - x, y0 + y + delta, color);
+                drawLine(x0 - x, y0 - y, x0 - x, y0 + y + delta-1, color);
         }
         if (y != py)
         {
             if (corners & 1)
-                drawLine(x0 + py, y0 - px, x0 + py, y0 + px + delta, color);
+                drawLine(x0 + py, y0 - px, x0 + py, y0 + px + delta-1, color);
             if (corners & 2)
-                drawLine(x0 - py, y0 - px, x0 - py, y0 + px + delta, color);
+                drawLine(x0 - py, y0 - px, x0 - py, y0 + px + delta-1, color);
             py = y;
         }
         px = x;
@@ -377,11 +377,16 @@ void Matrix_GFX::drawRoundRect(int8_t x, int8_t y, int8_t w, int8_t h,
     int8_t max_radius = ((w < h) ? w : h) / 2; // 1/2 minor axis
     if (r > max_radius)
         r = max_radius;
+    // Else, won't work for tiny rectangles
+    if (r < 2)
+    {
+        r = 2;
+    }
     // smarter version
-    drawLine(x + r, y, x + w - r, y, color);                 // Top
-    drawLine(x + r, y + h - 1, x + w - r, y, color);         // Bottom
-    drawLine(x, y + r, x, y + h - r, color);                 // Left
-    drawLine(x + w - 1, y + r, x + w - 1, y + h - r, color); // Right
+    drawLine(x + r, y, x + w - 2 * r + 1, y, color);                 // Top
+    drawLine(x + r, y + h - 1, x + w - 2 * r + 1, y + h - 1, color); // Bottom
+    drawLine(x, y + r, x, y + h - 2 * r + 1, color);                 // Left
+    drawLine(x + w - 1, y + r, x + w - 1, y + h - 2 * r + 1, color); // Right
     // draw four corners
     drawCircleHelper(x + r, y + r, r, 1, color);
     drawCircleHelper(x + w - r - 1, y + r, r, 2, color);
@@ -406,11 +411,18 @@ void Matrix_GFX::fillRoundRect(int8_t x, int8_t y, int8_t w, int8_t h,
     uint8_t max_radius = ((w < h) ? w : h) / 2; // 1/2 minor axis
     if (r > max_radius)
         r = max_radius;
+    if (r < 2)
+    {
+      r=2;
+    }
     // smarter version
     fillRect(x + r, y, w - 2 * r, h, color);
-    // draw four corners
-    fillCircleHelper(x + w - r - 1, y + r, r, 1, h - 2 * r - 1, color);
-    fillCircleHelper(x + r, y + r, r, 2, h - 2 * r - 1, color);
+    //fillRect(x, y + r, w, h - 2 * r, color);
+
+
+        // draw four corners
+        fillCircleHelper(x + w - r - 1, y + r, r, 1, h - 2 * r - 1, color);
+        fillCircleHelper(x + r, y + r, r, 2, h - 2 * r - 1, color);
 }
 
 /**************************************************************************/
@@ -428,14 +440,14 @@ void Matrix_GFX::fillRoundRect(int8_t x, int8_t y, int8_t w, int8_t h,
 */
 /**************************************************************************/
 void Matrix_GFX::drawBitmap(int8_t x, int8_t y, const uint8_t bitmap[],
-                            int8_t w, int8_t h, uint8_t color,
+                            int8_t w, int8_t h, bool mirror, uint8_t color,
                             uint8_t background)
 {
     int8_t byteWidth = (w + 7) / 8; // Bitmap scanline pad = whole byte
     uint8_t byte = 0;
-    for (int16_t j = 0; j < h; j++, y++)
+    for (int8_t j = 0; j < h; j++, y++)
     {
-        for (int16_t i = 0; i < w; i++)
+        for (int8_t i = 0; i < w; i++)
         {
             if (i & 7)
                 byte <<= 1;
@@ -443,11 +455,11 @@ void Matrix_GFX::drawBitmap(int8_t x, int8_t y, const uint8_t bitmap[],
                 byte = pgm_read_byte(&bitmap[j * byteWidth + i / 8]);
             if (byte & 0x80)
             {
-                drawPixel(x + i, y, color);
+                drawPixel(x + (mirror ? w - 1 - i : i), y, color);
             }
             else if (background != GFX_TRANSPARENT)
             {
-                drawPixel(x + i, y, background);
+                drawPixel(x + (mirror ? w - 1 - i : i), y, background);
             }
         }
     }
@@ -494,6 +506,7 @@ void Matrix_GFX::scrollStop()
 /**
    @brief      Refreshes the scroll display based on the values
                 in the scroll parameters
+    @param    refreshDisplay   Refresh the matrix display after writing text
 */
 /**************************************************************************/
 void Matrix_GFX::scrollDisplay()
@@ -541,8 +554,9 @@ void Matrix_GFX::scrollDisplay()
             letterColumn = pgm_read_byte(&Character_font_5x8[(letter - '0') * 5 + letterColumn]);
         }
         // Now we have the column data to display, we just have to set the pixels
-        for(uint8_t p=0;p<8;p++) {
-            drawPixel(_scrollStart + i - _scrollPosition, 7-p, (letterColumn & (1<<p)) ?  GFX_WHITE : GFX_BLACK);
+        for (uint8_t p = 0; p < 8; p++)
+        {
+            drawPixel(_scrollStart + i - _scrollPosition, 7 - p, (letterColumn & (1 << p)) ? GFX_WHITE : GFX_BLACK);
         }
     }
 
@@ -556,7 +570,6 @@ void Matrix_GFX::scrollDisplay()
         // if we are on first interval, we use a longer one to see the first letter, else the requested scroll interval is used
         _scrollNextUpdate = millis() + ((_scrollPosition == 1) ? SCROLL_INITIAL_INTERVAL : _scrollInterval);
     }
-    display();
 }
 
 /**************************************************************************/
@@ -565,11 +578,15 @@ void Matrix_GFX::scrollDisplay()
                 and calls the scrollDisplay function if so
 */
 /**************************************************************************/
-void Matrix_GFX::scrollRefresh()
+void Matrix_GFX::scrollRefresh(bool refreshDisplay)
 {
     // We need to update the scroll only if we have a scrolling in progress
     if ((_scrollNextUpdate > 0) && (millis() > _scrollNextUpdate))
     {
         scrollDisplay();
+        if (refreshDisplay)
+        {
+            display();
+        }
     }
 }

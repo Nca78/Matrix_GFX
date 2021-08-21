@@ -81,7 +81,7 @@ private:
   void fillCircleHelper(int8_t x0, int8_t y0, int8_t r,
                         uint8_t corners, int8_t delta,
                         uint8_t color);
-  void drawCircleHelper(int8_t x0, int8_t y0, uint8_t r,
+  void drawCircleHelper(int8_t x0, int8_t y0, int8_t r,
                         uint8_t cornername, uint8_t color);
 
   // Variables for scrolling
@@ -117,13 +117,13 @@ public:
   void fillRoundRect(int8_t x, int8_t y, int8_t w, int8_t h,
                      uint8_t r, uint8_t color);
   void drawBitmap(int8_t x, int8_t y, const uint8_t bitmap[],
-                  int8_t w, int8_t h, uint8_t color = GFX_WHITE,
+                  int8_t w, int8_t h, bool mirror = false, uint8_t color = GFX_WHITE,
                   uint8_t background = GFX_BLACK);
 
   void scrollStop();
   void scrollInit(const char text[], uint8_t scrollStart, uint8_t scrollWidth, uint8_t scrollInterval);
   void scrollDisplay();
-  void scrollRefresh();
+  void scrollRefresh(bool refreshDisplay = true);
 
 };
 

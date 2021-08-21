@@ -27,7 +27,7 @@ public:
   void init();
   void display();
   void setBrightness(uint8_t level);
-  void sendCommand(uint8_t command, uint16_t value=TM1640_NOVALUE);
+  void sendCommand(uint8_t command, bool endTransfer = true);
 };
 
 #endif

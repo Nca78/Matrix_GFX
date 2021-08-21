@@ -21,7 +21,7 @@
          Number of 8x8 matrix displays
 
 */
-Max72_GFX::Max72_GFX(uint8_t data, uint8_t clk, uint8_t cs, uint8_t width, uint8_t height = 1)
+Max72_GFX::Max72_GFX(uint8_t data, uint8_t clk, uint8_t cs, uint8_t width, uint8_t height)
     : Matrix_GFX(width, height)
 {
   _data = data;
@@ -60,7 +60,7 @@ void Max72_GFX::init()
  */
 void Max72_GFX::setBrightness(uint8_t level, uint8_t index)
 {
-  sendCommand(level, index);
+  sendCommand(MAX72_CMD_INTENSITY, level, index);
 }
 
 /**
