@@ -7,8 +7,10 @@
 #ifndef _MATRIX_GFX_H_
 #define _MATRIX_GFX_H_
 
+#include "Arduino.h"
+
 #define GFX_BLACK 0 ///< Draw 'off' pixels
-#define GFX_WHITE 1 ///< Draw 'on' pixels
+#define GFX_WHITE 1 ///< Draw 'on' pixels, any non 0 value will work
 //#define GFX_INVERSE 2   ///< Invert pixels
 
 #define GFXMATRIX_ALL 99   /// Constant to apply change to all matrix panels
@@ -75,7 +77,6 @@ class Matrix_GFX
 {
 private:
   uint16_t _rotation; ///< Display rotation (0 thru 3), for max 8 8x8 matrices
-  uint8_t _count;
   uint8_t _width;
   uint8_t _height;
   void fillCircleHelper(int8_t x0, int8_t y0, int8_t r,
@@ -95,13 +96,13 @@ private:
 
 protected:
   uint8_t *_buffer;
-
+  uint8_t _count;
 public:
   Matrix_GFX(uint8_t widthMatrixCount, uint8_t heightMatrixCount = 1);
   virtual ~Matrix_GFX();
   virtual void init(void){};
   virtual void display() {};
-  uint8_t getCount(void) { return _count; };
+  //uint8_t getCount(void) { return _count; };
   uint8_t *getBuffer(void);
   void setRotation(int rotation, uint8_t index = GFXMATRIX_ALL);
   uint8_t getRotation(uint8_t index = 0);

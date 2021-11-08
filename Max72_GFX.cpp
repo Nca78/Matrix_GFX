@@ -79,7 +79,7 @@ void Max72_GFX::sendCommand(uint8_t command, uint8_t value, uint8_t index)
   // Start transfer, set _cs pin low
   digitalWrite(_cs, LOW);
   // Command must be sent for each led module
-  for (uint8_t m = getCount(); m > 0; m--)
+  for (uint8_t m = _count; m > 0; m--)
   {
     shiftOut(_data, _clk, MSBFIRST, ((index == MAX72_ALLMATRIX) || (index == m)) ? command : 0);
     shiftOut(_data, _clk, MSBFIRST, ((index == MAX72_ALLMATRIX) || (index == m)) ? value : 0);
@@ -101,7 +101,7 @@ void Max72_GFX::display()
     // Start transfer, set _cs pin low
     digitalWrite(_cs, LOW);
     // Command must be sent for each led module
-    for (uint8_t m = getCount(); m > 0; m--)
+    for (uint8_t m = _count; m > 0; m--)
     {
       shiftOut(_data, _clk, MSBFIRST, col);
       shiftOut(_data, _clk, MSBFIRST, _buffer[(m -1) * 8 + col - 1]);

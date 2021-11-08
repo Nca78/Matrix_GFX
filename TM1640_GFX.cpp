@@ -101,7 +101,7 @@ void TM1640_GFX::display()
   sendCommand(TM1640_CMD_ADDRESS_SET, false);
   // From datasheet: Start transfer, set data and clk pin low
   digitalWrite(_data, LOW);
-  for (int c = 0; c < getCount() * 8; c++)
+  for (int c = 0; c < _count * 8; c++)
   {
     customShiftOut(_buffer[c]);
   }
