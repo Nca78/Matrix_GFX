@@ -15,18 +15,23 @@ robot2[] = {B01111110,B11110001,B11010101,B11110001,B01111110,B10001111,B1000111
 
 const static char scrollString[] PROGMEM = "I CAN SCROLL TEXT and Do SOMEThing else !";
 
-OLED_GFX matrix = OLED_GFX(0x3D, OLED_12864, MATRIX_COUNT, false, false);
+//********** IMPORTANT: SELECT YOUR OLED TYPE HERE ! **********//
+
+// For 1.3'' I2C OLED (using SH1106):
+//OLED_GFX matrix = OLED_GFX(0x3D, OLED_12864, MATRIX_COUNT, true, false);
+// For 0.91'' or 0.96'' I2C OLED (using SSD1306):
+OLED_GFX matrix = OLED_GFX(0x3C, OLED_12864, MATRIX_COUNT, false, false);
 
 void setup()
 {
-  Wire.begin(21, 22); // for boards other than ESP32 use Wire.begin(); with no pin numbers
+  Wire.begin();
   matrix.setRotation(MATRIX_ROTATION);
   matrix.init();
 }
 
 void loop()
 {  
-  /*
+  
   // shapes
   for (int i=0; i<4;i++) {
     matrix.clearDisplay();
@@ -91,16 +96,7 @@ void loop()
     matrix.display();
     delay(200);
   }
-/*
-  // display brightness
-  for(int repeat = 0; repeat < 4; repeat++) {
-    for(int level = 0; level < 16;level++) {
-      matrix.setBrightness(repeat % 2 ? level : 15-level);
-      delay(125);
-    }
-  }
-  matrix.setBrightness(8);
-*/
+
   // bitmap
   for(int8_t i=0;i<8;i++) {
     matrix.clearDisplay();

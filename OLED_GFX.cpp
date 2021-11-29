@@ -102,21 +102,16 @@ void OLED_GFX::ssd1306_commandList(const uint8_t *c, uint8_t n)
 }
 
 /**
- * @brief Select
+ * @brief Selects I2C output on TCA9548 I2C multiplexer (when multipleOLEDs is true)
  * 
  * @param outputNumber output to select from 0 to 7 
  */
 void OLED_GFX::select_i2c_output(uint8_t outputNumber)
 {
-  // Value 1 will select output number 0
-  uint8_t command = 1;
-  // Active bit must be shifted to the left for inch increase of output number
-  if (outputNumber > 0)
-  {
-    command = 1 << outputNumber;
-  }
+  // Active bit must be shifted to the left for each increase of output number
+  //  (value 1 is output 0)
   Wire.beginTransmission(TCA9548_I2C_ADDRESS);
-  Wire.write(command);
+  Wire.write(1 << outputNumber);
   Wire.endTransmission();
 }
 
@@ -126,78 +121,87 @@ void OLED_GFX::select_i2c_output(uint8_t outputNumber)
  */
 void OLED_GFX::init()
 {
+  byte oledCount = _multipleOLEDs ? _count : 1;
 
-  TRANSACTION_START
-
-  // Init sequence
-  static const uint8_t PROGMEM init1[] = {SSD1306_DISPLAYOFF,         // 0xAE
-                                          SSD1306_SETDISPLAYCLOCKDIV, // 0xD5
-                                          0x80,                       // the suggested ratio 0x80
-                                          SSD1306_SETMULTIPLEX};      // 0xA8
-  ssd1306_commandList(init1, sizeof(init1));
-  ssd1306_command1((uint8_t)63);
-
-  static const uint8_t PROGMEM init2[] = {SSD1306_SETDISPLAYOFFSET,   // 0xD3
-                                          0x00,                       // no offset
-                                          SSD1306_SETSTARTLINE | 0x0, // line #0
-                                          SSD1306_CHARGEPUMP};        // 0x8D
-  ssd1306_commandList(init2, sizeof(init2));
-
-  //ssd1306_command1((vccstate == SSD1306_EXTERNALVCC) ? 0x10 : 0x14);
-  ssd1306_command1(0x14);
-
-  static const uint8_t PROGMEM init3[] = {SSD1306_MEMORYMODE, // 0x20
-                                          0x00,               // 0x0 act like ks0108
-                                          SSD1306_SEGREMAP | 0x1,
-                                          SSD1306_COMSCANDEC};
-  ssd1306_commandList(init3, sizeof(init3));
-
-  // default for 128*32
-  uint8_t comPins = 0x02;
-  contrast = 0x8F;
-
-  if (_resolution == OLED_12864)
+  for (int i = 0; i < oledCount; i++)
   {
-    comPins = 0x12;
-    //contrast = (vccstate == SSD1306_EXTERNALVCC) ? 0x9F : 0xCF;
-    contrast = 0xCF;
-  }
-  // else if (((WIDTH * zoomLevel) == 96) && ((HEIGHT * zoomLevel) == 16))
-  // {
-  //   comPins = 0x2; // ada x12
-  //   contrast = (vccstate == SSD1306_EXTERNALVCC) ? 0x10 : 0xAF;
-  // }
-  // else
-  // {
-  //   // Other screen varieties -- TBD
-  // }
 
-  ssd1306_command1(SSD1306_SETCOMPINS);
-  ssd1306_command1(comPins);
-  ssd1306_command1(SSD1306_SETCONTRAST);
-  ssd1306_command1(contrast);
+    if (_multipleOLEDs)
+    {
+      select_i2c_output(i);
+    }
 
-  ssd1306_command1(SSD1306_SETPRECHARGE); // 0xd9
-  //ssd1306_command1((vccstate == SSD1306_EXTERNALVCC) ? 0x22 : 0xF1);
-  ssd1306_command1(0xF1);
-  static const uint8_t PROGMEM init5[] = {
-      SSD1306_SETVCOMDETECT, // 0xDB
-      0x40,
-      SSD1306_DISPLAYALLON_RESUME, // 0xA4
-      SSD1306_NORMALDISPLAY,       // 0xA6
-      SSD1306_DEACTIVATE_SCROLL,
-      SSD1306_DISPLAYON}; // Main screen turn on
-  ssd1306_commandList(init5, sizeof(init5));
+    TRANSACTION_START
 
-  TRANSACTION_END
+    // Init sequence
+    static const uint8_t PROGMEM init1[] = {SSD1306_DISPLAYOFF,         // 0xAE
+                                            SSD1306_SETDISPLAYCLOCKDIV, // 0xD5
+                                            0x80,                       // the suggested ratio 0x80
+                                            SSD1306_SETMULTIPLEX};      // 0xA8
+    ssd1306_commandList(init1, sizeof(init1));
+    ssd1306_command1((uint8_t)63);
 
-  // We must now clean the screen, we do it by clearing buffer and sending
-  // the first matrix 2 times at x8 size
-  //  it will work on 128*64 and overflow on smaller screens but will not be a 
-  //   problem as we only write empty bytes
+    static const uint8_t PROGMEM init2[] = {SSD1306_SETDISPLAYOFFSET,   // 0xD3
+                                            0x00,                       // no offset
+                                            SSD1306_SETSTARTLINE | 0x0, // line #0
+                                            SSD1306_CHARGEPUMP};        // 0x8D
+    ssd1306_commandList(init2, sizeof(init2));
+
+    //ssd1306_command1((vccstate == SSD1306_EXTERNALVCC) ? 0x10 : 0x14);
+    ssd1306_command1(0x14);
+
+    static const uint8_t PROGMEM init3[] = {SSD1306_MEMORYMODE, // 0x20
+                                            0x00,               // 0x0 act like ks0108
+                                            SSD1306_SEGREMAP | 0x1,
+                                            SSD1306_COMSCANDEC};
+    ssd1306_commandList(init3, sizeof(init3));
+
+    // default for 128*32
+    uint8_t comPins = 0x02;
+    contrast = 0x8F;
+
+    if (_resolution == OLED_12864)
+    {
+      comPins = 0x12;
+      //contrast = (vccstate == SSD1306_EXTERNALVCC) ? 0x9F : 0xCF;
+      contrast = 0xCF;
+    }
+    // else if (((WIDTH * zoomLevel) == 96) && ((HEIGHT * zoomLevel) == 16))
+    // {
+    //   comPins = 0x2; // ada x12
+    //   contrast = (vccstate == SSD1306_EXTERNALVCC) ? 0x10 : 0xAF;
+    // }
+    // else
+    // {
+    //   // Other screen varieties -- TBD
+    // }
+
+    ssd1306_command1(SSD1306_SETCOMPINS);
+    ssd1306_command1(comPins);
+    ssd1306_command1(SSD1306_SETCONTRAST);
+    ssd1306_command1(contrast);
+
+    ssd1306_command1(SSD1306_SETPRECHARGE); // 0xd9
+    //ssd1306_command1((vccstate == SSD1306_EXTERNALVCC) ? 0x22 : 0xF1);
+    ssd1306_command1(0xF1);
+    static const uint8_t PROGMEM init5[] = {
+        SSD1306_SETVCOMDETECT, // 0xDB
+        0x40,
+        SSD1306_DISPLAYALLON_RESUME, // 0xA4
+        SSD1306_NORMALDISPLAY,       // 0xA6
+        SSD1306_DEACTIVATE_SCROLL,
+        SSD1306_DISPLAYON}; // Main screen turn on
+    ssd1306_commandList(init5, sizeof(init5));
+
+    TRANSACTION_END
+    // We must now clean the screen, we do it by clearing buffer and sending
+    // the first matrix 2 times at x8 size
+    //  it will work on 128*64 and overflow on smaller screens but will not be a
+    //   problem as we only write empty bytes
     clearDisplay();
-    sendMatrix(0,0, OLEDZoomX8, 0);
-    sendMatrix(64,0, OLEDZoomX8, 0);
+    sendMatrix(0, 0, OLEDZoomX8, 0);
+    sendMatrix(64, 0, OLEDZoomX8, 0);
+  }
 }
 
 /**
@@ -230,7 +234,7 @@ void OLED_GFX::display()
   uint8_t width = (_resolution & B00001111) * 16;
   uint8_t height = (_resolution >> 4) * 16;
   // if vertical position we swap width and height
-  if (rotation % 2 > 0)
+  if (rotation % 2 > 0 && _resolution != OLED_12832)
   {
     y = height;
     height = width;
@@ -253,38 +257,62 @@ void OLED_GFX::display()
 
   for (int matrixIndex = 0; matrixIndex < _count; matrixIndex++)
   {
-    indexForPosition = _multipleOLEDs ? 1 : matrixIndex;
-
-    // Now we have the zoom level we can calculate left/top margin
-    x = (width - (countForPosition > 1 ? 2 : 1) * GFXMATRIX_SIZE * zoomLevel) / 2;
-    y = (height - (countForPosition > 2 ? 2 : 1) * GFXMATRIX_SIZE * zoomLevel) / 2;
-
-    // Now we position the current matrix
-    x += GFXMATRIX_SIZE * zoomLevel * (indexForPosition % 2);
-    // Special case for matrix 3/3 (index from 0 = 2...), we must move it half a matrix width to center
-    if (countForPosition == 3 && indexForPosition == 2)
+    if (_multipleOLEDs)
     {
-      x += (zoomLevel * GFXMATRIX_SIZE) / 2;
+      indexForPosition = 0;
     }
-    y += GFXMATRIX_SIZE * zoomLevel * (1-(indexForPosition / 2));
-
-    // If vertical, we swap x/y
-    if ((rotation % 2 == 1) && (_resolution != OLED_12832))
+    else
     {
-      uint8_t t = y;
-      y = x;
-      x = t;
+      indexForPosition = matrixIndex;
     }
-    
-    // If more than one element and rotation at 180 or 270° we need to revert matrix position in x & y
-    if ((countForPosition > 1) && (rotation > 1))
+
+    // Now we have the zoom level we can calculate left/top margin and position the current matrix
+    if (_resolution != OLED_12832)
     {
-      // we keep y=0 and only set x
-      x = ((rotation == 2) ? width : height) - x + 1 - zoomLevel * GFXMATRIX_SIZE;
-      y = ((rotation == 2) ? height : width) - y + 1 - zoomLevel * GFXMATRIX_SIZE;
+      x = (width - (countForPosition > 1 ? 2 : 1) * GFXMATRIX_SIZE * zoomLevel) / 2;
+      y = (height - (countForPosition > 2 ? 2 : 1) * GFXMATRIX_SIZE * zoomLevel) / 2;
+      x += GFXMATRIX_SIZE * zoomLevel * (indexForPosition % 2);
+
+      // Special case for matrix 3/3 (index from 0 = 2...), we must move it half a matrix width to center
+      if (countForPosition == 3 && indexForPosition == 2)
+      {
+        x += (zoomLevel * GFXMATRIX_SIZE) / 2;
+      }
+      y += GFXMATRIX_SIZE * zoomLevel * ((rotation % 2 == 0) ? (indexForPosition / 2) : (1 - (indexForPosition / 2)));
+
+      // If vertical, we swap x/y
+      if (rotation % 2 == 1)
+      {
+        uint8_t t = y;
+        y = x;
+        x = t;
+      }
+
+      // If more than one element and rotation at 180 or 270° we need to revert matrix position in x & y
+      if ((countForPosition > 1) && (rotation > 1))
+      {
+        // we keep y=0 and only set x
+        x = ((rotation == 2) ? width : height) - x + 1 - zoomLevel * GFXMATRIX_SIZE;
+        y = ((rotation == 2) ? height : width) - y + 1 - zoomLevel * GFXMATRIX_SIZE;
+      }
+    }
+    else
+    {
+      // Specific position calculation because of the "stripe" shape of 128x32 OLED
+      zoomLevel = OLEDZoomX4;
+      y = 32;
+      x = (width - (countForPosition * GFXMATRIX_SIZE * zoomLevel)) / 2;
+      x += GFXMATRIX_SIZE * zoomLevel * indexForPosition;
+      if (rotation > 1) {
+        x = width-x-GFXMATRIX_SIZE * zoomLevel;
+      }
     }
 
     // now we have x,y,and index of data to display
+    if (_multipleOLEDs)
+    {
+      select_i2c_output(matrixIndex);
+    }
     sendMatrix(x, y, zoomLevel, matrixIndex);
   }
 }
