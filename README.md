@@ -9,8 +9,8 @@ At the moment the library supports:
  - MAX7219 (and MAX7221)
  - TM1640
  - HT16K33
- - simulated matrices on OLED (I2C only, SSD1306 & SH1106)
- *Only been tested on 128*64 & 128*32 screens, please report if you try other resolutions*
+ - simulated matrices on OLED (I2C only, SSD1306 & SH1106) 
+ *Only tested on 128x64 & 128x32 screens, please report if you try other resolutions*
 
 ## Rotation
 Rotation can be managed 8x8 matrix by 8x8 matrix or for all matrices at the same time.
